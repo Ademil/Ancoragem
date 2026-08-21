@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Ancoragem NBR 6118:2023 - Engenharia Estrutural</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter e JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                            900: '#0f172a',
+                        },
+                        concrete: {
+                            100: '#f1f5f9',
+                            300: '#cbd5e1',
+                            500: '#64748b',
+                            700: '#334155',
+                            900: '#0f172a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        /* Canvas custom styling */
+        #anchorageCanvas {
+            touch-action: none;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+        .dark #anchorageCanvas {
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+        }
+        /* Printable layout styles */
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .shadow-xl, .shadow-md, .shadow-sm { box-shadow: none !important; }
+            .border { border-color: #cbd5e1 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Top Header Bar -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-sky-600 p-2 rounded-lg text-white font-bold text-xl flex items-center justify-center w-10 h-10 shadow-lg shadow-sky-500/30">
+                    <i class="fa-solid fa-ruler-combined"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        CalcAncoragem <span class="bg-sky-500/20 text-sky-400 text-xs px-2.5 py-0.5 rounded-full border border-sky-500/30 font-semibold">NBR 6118:2023</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Ancoragem e Emendas de Armaduras de Concreto Armado</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button id="themeToggle" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors" title="Alternar Tema Claro/Escuro">
+                    <i class="fa-solid fa-moon text-sm"></i>
+                </button>
+                <button onclick="window.print()" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold flex items-center gap-2 shadow-md transition-all">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span class="hidden sm:inline">Exportar Relatório</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT COLUMN: Input Forms (5 cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-5 no-print">
+            
+            <!-- Calculation Mode Selector -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-800">
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2">
+                    <i class="fa-solid fa-sliders text-sky-500 mr-1"></i> Módulo de Cálculo
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btnModeStandard" onclick="setCalcMode('standard')" class="px-3 py-2 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center gap-1.5 bg-sky-50 border-sky-500 text-sky-700 dark:bg-sky-950/50 dark:border-sky-500 dark:text-sky-300 shadow-sm">
+                        <i class="fa-solid fa-arrows-left-right"></i> Ancoragem Reta / Gancho
+                    </button>
+                    <button type="button" id="btnModeSupport" onclick="setCalcMode('support')" class="px-3 py-2 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center gap-1.5 bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-100">
+                        <i class="fa-solid fa-building-columns"></i> Apoio Extremo de Viga
+                    </button>
+                    <button type="button" id="btnModeSplice" onclick="setCalcMode('splice')" class="px-3 py-2 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center gap-1.5 bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-100">
+                        <i class="fa-solid fa-link"></i> Emenda por Traspasse
+                    </button>
+                    <button type="button" id="btnModeBundle" onclick="setCalcMode('bundle')" class="px-3 py-2 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center gap-1.5 bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-100">
+                        <i class="fa-solid fa-layer-group"></i> Feixe de Barras
+                    </button>
+                </div>
+            </div>
+
+            <!-- Parameters Card -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <h2 class="font-bold text-sm text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-cubes text-sky-500"></i> Propriedades dos Materiais
+                    </h2>
+                    <span class="text-xs text-slate-400 font-mono">NBR 6118 (8.2 / 9.4)</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Concrete Grade -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                            Classe do Concreto
+                        </label>
+                        <select id="selectFck" onchange="calculateAll()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2.5 font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <option value="20">C20 (fck = 20 MPa)</option>
+                            <option value="25" selected>C25 (fck = 25 MPa)</option>
+                            <option value="30">C30 (fck = 30 MPa)</option>
+                            <option value="35">C35 (fck = 35 MPa)</option>
+                            <option value="40">C40 (fck = 40 MPa)</option>
+                            <option value="45">C45 (fck = 45 MPa)</option>
+                            <option value="50">C50 (fck = 50 MPa)</option>
+                            <option value="55">C55 (fck = 55 MPa)</option>
+                            <option value="60">C60 (fck = 60 MPa)</option>
+                            <option value="70">C70 (fck = 70 MPa)</option>
+                            <option value="80">C80 (fck = 80 MPa)</option>
+                            <option value="90">C90 (fck = 90 MPa)</option>
+                        </select>
+                    </div>
+
+                    <!-- Steel Type -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                            Categoria do Aço
+                        </label>
+                        <select id="selectSteel" onchange="calculateAll()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2.5 font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <option value="CA50" selected>CA-50 (fyk = 500 MPa / Nervurado)</option>
+                            <option value="CA60">CA-60 (fyk = 600 MPa / Entalhado/Nerv)</option>
+                            <option value="CA25">CA-25 (fyk = 250 MPa / Liso)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Rebar Diameter -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                            Bitola da Barra (&phi;)
+                        </label>
+                        <select id="selectPhi" onchange="calculateAll()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2.5 font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <option value="5.0">5.0 mm</option>
+                            <option value="6.3">6.3 mm</option>
+                            <option value="8.0">8.0 mm</option>
+                            <option value="10.0">10.0 mm</option>
+                            <option value="12.5">12.5 mm</option>
+                            <option value="16.0" selected>16.0 mm</option>
+                            <option value="20.0">20.0 mm</option>
+                            <option value="22.0">22.0 mm</option>
+                            <option value="25.0">25.0 mm</option>
+                            <option value="32.0">32.0 mm</option>
+                            <option value="40.0">40.0 mm</option>
+                        </select>
+                    </div>
+
+                    <!-- Bond Position (Boa / Má) -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 flex items-center justify-between">
+                            <span>Situação Aderência</span>
+                            <i class="fa-solid fa-circle-info text-slate-400 cursor-pointer" title="Boa aderência: barras inclinadas >45° ou barras horizontais na parte inferior (<30cm da base)."></i>
+                        </label>
+                        <select id="selectBond" onchange="calculateAll()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2.5 font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <option value="good" selected>Boa Aderência (&eta;&bdquo; = 1.0)</option>
+                            <option value="poor">Má Aderência (&eta;&bdquo; = 0.7)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Effort Type & Hook Type -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                            Tipo de Esforço
+                        </label>
+                        <select id="selectEffort" onchange="onEffortChange()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2.5 font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <option value="tension" selected>Tração</option>
+                            <option value="compression">Compressão</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                            Tipo de Gancho
+                        </label>
+                        <select id="selectHook" onchange="calculateAll()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2.5 font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <option value="none">Sem Gancho (Reta)</option>
+                            <option value="type1" selected>Gancho 180° (Semicircular - Tipo 1)</option>
+                            <option value="type2">Gancho 45° (Tipo 2)</option>
+                            <option value="type3">Gancho 90° (Reto - Tipo 3)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Cover & Spacing -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                            Cabrimento da Barra (c)
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="inputCover" value="30" min="10" max="100" step="5" oninput="calculateAll()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2.5 pr-8 font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <span class="absolute right-2.5 top-2.5 text-xs text-slate-400 font-mono">mm</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                            Razão A<sub>s,calc</sub> / A<sub>s,ef</sub>
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="inputAsRatio" value="1.0" min="0.1" max="1.0" step="0.05" oninput="calculateAll()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2.5 pr-8 font-medium focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                            <span class="absolute right-2.5 top-2.5 text-xs text-slate-400 font-mono">%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Context Specific Inputs -->
+                <div id="containerSupportInputs" class="hidden p-3 bg-sky-50/50 dark:bg-sky-950/30 rounded-lg border border-sky-100 dark:border-sky-900/50 space-y-3">
+                    <h3 class="text-xs font-bold text-sky-800 dark:text-sky-300 uppercase tracking-wide">
+                        <i class="fa-solid fa-building-columns mr-1"></i> Parâmetros do Apoio Extremo
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">
+                                Cortante de Cálc. (V<sub>d</sub>)
+                            </label>
+                            <div class="relative">
+                                <input type="number" id="inputVd" value="84" step="1" oninput="calculateAll()" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2 pr-7">
+                                <span class="absolute right-2 top-2 text-xs text-slate-400 font-mono">kN</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">
+                                Largura do Pilar (b)
+                            </label>
+                            <div class="relative">
+                                <input type="number" id="inputSupportWidth" value="20" step="1" oninput="calculateAll()" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2 pr-7">
+                                <span class="absolute right-2 top-2 text-xs text-slate-400 font-mono">cm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="containerSpliceInputs" class="hidden p-3 bg-purple-50/50 dark:bg-purple-950/30 rounded-lg border border-purple-100 dark:border-purple-900/50 space-y-3">
+                    <h3 class="text-xs font-bold text-purple-800 dark:text-purple-300 uppercase tracking-wide">
+                        <i class="fa-solid fa-link mr-1"></i> Parâmetros da Emenda
+                    </h3>
+                    <div>
+                        <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">
+                            % de Barras Emendadas na Mesma Seção
+                        </label>
+                        <select id="selectSplicePct" onchange="calculateAll()" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2 font-medium">
+                            <option value="20">&le; 20% (&alpha;<sub>ot</sub> = 1.2)</option>
+                            <option value="25">25% (&alpha;<sub>ot</sub> = 1.4)</option>
+                            <option value="33">33% (&alpha;<sub>ot</sub> = 1.6)</option>
+                            <option value="50" selected>50% (&alpha;<sub>ot</sub> = 1.8)</option>
+                            <option value="100">100% (&alpha;<sub>ot</sub> = 2.0)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="containerBundleInputs" class="hidden p-3 bg-amber-50/50 dark:bg-amber-950/30 rounded-lg border border-amber-100 dark:border-amber-900/50 space-y-3">
+                    <h3 class="text-xs font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wide">
+                        <i class="fa-solid fa-layer-group mr-1"></i> Configuração do Feixe
+                    </h3>
+                    <div>
+                        <label class="block text-xs text-slate-600 dark:text-slate-300 mb-1">
+                            Número de Barras no Feixe (n)
+                        </label>
+                        <select id="selectBundleCount" onchange="calculateAll()" class="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs p-2 font-medium">
+                            <option value="2" selected>2 barras (&phi;<sub>n</sub> = 1.41 &phi;)</option>
+                            <option value="3">3 barras (&phi;<sub>n</sub> = 1.73 &phi;)</option>
+                            <option value="4">4 barras (&phi;<sub>n</sub> = 2.00 &phi;)</option>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Material Properties Summary Card -->
+            <div class="bg-slate-900 text-slate-200 rounded-xl p-4 shadow-sm border border-slate-800 space-y-2 font-mono text-xs">
+                <div class="flex justify-between items-center text-slate-400 border-b border-slate-800 pb-2 mb-2 font-sans text-xs">
+                    <span class="font-bold text-slate-300"><i class="fa-solid fa-calculator text-sky-400 mr-1"></i> Parâmetros Derivados</span>
+                    <span class="bg-slate-800 px-2 py-0.5 rounded text-sky-400 font-mono text-[10px]">&gamma;<sub>c</sub>=1.4 | &gamma;<sub>s</sub>=1.15</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">f<sub>ctd</sub> (Resist. Tração Conc.):</span>
+                        <span id="dispFctd" class="font-bold text-sky-300 text-sm">-- MPa</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">f<sub>yd</sub> (Escoamento Aço):</span>
+                        <span id="dispFyd" class="font-bold text-emerald-400 text-sm">-- MPa</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">f<sub>bd</sub> (Tensão Aderência):</span>
+                        <span id="dispFbd" class="font-bold text-amber-300 text-sm">-- MPa</span>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Pino Dobramento (D):</span>
+                        <span id="dispPino" class="font-bold text-purple-300 text-sm">-- mm</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- RIGHT COLUMN: Output Dashboard & Interactive Canvas (7 cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-5">
+            
+            <!-- Primary Results KPI Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                
+                <!-- Basic Anchorage -->
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                        <span class="font-medium text-slate-500 dark:text-slate-400">Comp. Básico (l<sub>b</sub>)</span>
+                        <i class="fa-solid fa-ruler-horizontal text-sky-500"></i>
+                    </div>
+                    <div class="mt-1">
+                        <div id="kpiLb" class="text-2xl font-black text-slate-900 dark:text-white font-mono">-- cm</div>
+                        <span id="kpiLbPhi" class="text-[11px] text-slate-400 font-mono">-- &phi;</span>
+                    </div>
+                </div>
+
+                <!-- Required Anchorage -->
+                <div class="bg-gradient-to-br from-sky-500 to-blue-600 text-white p-4 rounded-xl shadow-md shadow-sky-500/20 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-sky-100 text-xs mb-1">
+                        <span class="font-bold uppercase tracking-wider text-[10px]">Necessário (l<sub>b,nec</sub>)</span>
+                        <i class="fa-solid fa-check-double text-white"></i>
+                    </div>
+                    <div class="mt-1">
+                        <div id="kpiLbNec" class="text-2xl font-black font-mono">-- cm</div>
+                        <span id="kpiLbNecPhi" class="text-[11px] text-sky-100 font-mono">-- &phi;</span>
+                    </div>
+                </div>
+
+                <!-- Lap Splice or Min anchorage -->
+                <div class="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between col-span-2 sm:col-span-1">
+                    <div class="flex items-center justify-between text-slate-400 text-xs mb-1">
+                        <span id="kpiSecondaryTitle" class="font-medium text-slate-500 dark:text-slate-400">Mínimo (l<sub>b,min</sub>)</span>
+                        <i id="kpiSecondaryIcon" class="fa-solid fa-shield-halved text-emerald-500"></i>
+                    </div>
+                    <div class="mt-1">
+                        <div id="kpiSecondaryVal" class="text-2xl font-black text-slate-900 dark:text-white font-mono">-- cm</div>
+                        <span id="kpiSecondarySub" class="text-[11px] text-slate-400 font-mono">-- &phi;</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Canvas Visualization Container -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm flex flex-col">
+                <div class="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-ruler text-sky-500"></i> Detalhamento Esquemático da Ancoragem
+                    </h3>
+                    <span id="canvasTag" class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500">Escala Ilustrativa</span>
+                </div>
+                
+                <div class="relative w-full aspect-[16/9] bg-slate-50 dark:bg-slate-950 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+                    <canvas id="anchorageCanvas" class="w-full h-full block"></canvas>
+                </div>
+
+                <!-- Alert / Status Notice -->
+                <div id="statusBox" class="mt-3 p-3 rounded-lg text-xs flex items-start gap-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300">
+                    <i class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400 text-base mt-0.5"></i>
+                    <div id="statusText">
+                        <strong>Ancoragem Conforme NBR 6118:2023:</strong> Comprimento de ancoragem adequado.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step-by-Step Engineering Calculation Memory (Memória de Cálculo) -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-sky-500"></i> Memória de Cálculo Detalhada (NBR 6118)
+                    </h3>
+                    <span class="text-xs text-slate-400 font-mono">Passo a Passo</span>
+                </div>
+
+                <div id="calcMemory" class="space-y-3 font-mono text-xs text-slate-600 dark:text-slate-300">
+                    <!-- Dynamic math memory injected via JS -->
+                </div>
+            </div>
+
+            <!-- Rebar Diameter Comparison Table -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-3 no-print">
+                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                    <h3 class="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-table text-sky-500"></i> Tabela Comparativa de Bitolas Comerciais
+                    </h3>
+                    <span class="text-[11px] text-slate-400">f<sub>ck</sub> = <span id="tblFck">25</span> MPa | <span id="tblSteel">CA-50</span></span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs font-mono">
+                        <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 uppercase text-[10px]">
+                            <tr>
+                                <th class="p-2">Bitola (&phi;)</th>
+                                <th class="p-2">l<sub>b</sub> (cm)</th>
+                                <th class="p-2">l<sub>b,nec</sub> Reta (cm)</th>
+                                <th class="p-2">l<sub>b,nec</sub> Gancho (cm)</th>
+                                <th class="p-2">l<sub>ot</sub> Traspasse (cm)</th>
+                                <th class="p-2">Pino Dobramento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tblBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 mt-auto no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 dark:text-slate-400">
+            Calculadora de Ancoragem e Emendas em Concreto Armado &bull; Desenvolvido em conformidade com a <strong>ABNT NBR 6118:2023</strong>.
+        </div>
+    </footer>
+
+    <script>
+        /* State Variables */
+        let currentMode = 'standard'; // 'standard', 'support', 'splice', 'bundle'
+
+        /* NBR 6118 Constant Parameters */
+        const GAMMA_C = 1.4; // Coeficiente de minoração do concreto
+        const GAMMA_S = 1.15; // Coeficiente de minoração do aço
+
+        // Standard Commercial Rebar Diameters (mm)
+        const REBAR_DIAMETERS = [5.0, 6.3, 8.0, 10.0, 12.5, 16.0, 20.0, 22.0, 25.0, 32.0, 40.0];
+
+        /* Theme Handling */
+        const themeToggleBtn = document.getElementById('themeToggle');
+        themeToggleBtn.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            calculateAll(); // Redraw canvas for theme colors
+        });
+
+        /* Mode Switcher */
+        function setCalcMode(mode) {
+            currentMode = mode;
+            
+            // Toggle active styles on mode buttons
+            const btnStandard = document.getElementById('btnModeStandard');
+            const btnSupport = document.getElementById('btnModeSupport');
+            const btnSplice = document.getElementById('btnModeSplice');
+            const btnBundle = document.getElementById('btnModeBundle');
+
+            [btnStandard, btnSupport, btnSplice, btnBundle].forEach(btn => {
+                btn.className = "px-3 py-2 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center gap-1.5 bg-slate-50 border-slate-200 text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 hover:bg-slate-100";
+            });
+
+            const activeClass = "px-3 py-2 text-xs font-semibold rounded-lg border transition-all text-center flex items-center justify-center gap-1.5 bg-sky-50 border-sky-500 text-sky-700 dark:bg-sky-950/50 dark:border-sky-500 dark:text-sky-300 shadow-sm";
+
+            // Show/hide context inputs
+            document.getElementById('containerSupportInputs').classList.add('hidden');
+            document.getElementById('containerSpliceInputs').classList.add('hidden');
+            document.getElementById('containerBundleInputs').classList.add('hidden');
+
+            if (mode === 'standard') {
+                btnStandard.className = activeClass;
+            } else if (mode === 'support') {
+                btnSupport.className = activeClass;
+                document.getElementById('containerSupportInputs').classList.remove('hidden');
+            } else if (mode === 'splice') {
+                btnSplice.className = activeClass;
+                document.getElementById('containerSpliceInputs').classList.remove('hidden');
+            } else if (mode === 'bundle') {
+                btnBundle.className = activeClass;
+                document.getElementById('containerBundleInputs').classList.remove('hidden');
+            }
+
+            calculateAll();
+        }
+
+        /* Effort Change Handler */
+        function onEffortChange() {
+            const effort = document.getElementById('selectEffort').value;
+            const hookSelect = document.getElementById('selectHook');
+            
+            if (effort === 'compression') {
+                // NBR 6118 9.4.2.1: Barras comprimidas devem ter ancoragem reta sem gancho!
+                hookSelect.value = 'none';
+                hookSelect.disabled = true;
+            } else {
+                hookSelect.disabled = false;
+            }
+            calculateAll();
+        }
+
+        /* Calculation Engine according to NBR 6118:2023 */
+        function calculateAll() {
+            const fck = parseFloat(document.getElementById('selectFck').value);
+            const steelType = document.getElementById('selectSteel').value;
+            let phi = parseFloat(document.getElementById('selectPhi').value); // mm
+            const bondPos = document.getElementById('selectBond').value;
+            const effort = document.getElementById('selectEffort').value;
+            const hookType = document.getElementById('selectHook').value;
+            const cover = parseFloat(document.getElementById('inputCover').value); // mm
+            const asRatio = parseFloat(document.getElementById('inputAsRatio').value); // As,calc / As,ef
+
+            // Steel properties
+            let fyk = 500;
+            let eta1 = 2.25; // Nervurado (CA-50/CA-60)
+            if (steelType === 'CA60') {
+                fyk = 600;
+                eta1 = 1.4; // Entalhado
+            } else if (steelType === 'CA25') {
+                fyk = 250;
+                eta1 = 1.0; // Liso
+            }
+            const fyd = fyk / GAMMA_S; // MPa
+
+            // Bundle adjustment if bundle mode active
+            let bundleBarsCount = 1;
+            let phiEquivalent = phi;
+            if (currentMode === 'bundle') {
+                bundleBarsCount = parseInt(document.getElementById('selectBundleCount').value);
+                phiEquivalent = phi * Math.sqrt(bundleBarsCount);
+            }
+
+            // Concrete tensile strength fctd (NBR 6118 Item 8.2.5)
+            let fctk_inf = 0;
+            if (fck <= 50) {
+                fctk_inf = 0.21 * Math.pow(fck, 2/3);
+            } else {
+                // High strength concrete (C55 to C90)
+                fctk_inf = 0.27 * Math.log(1 + 0.11 * fck) * Math.pow(fck, 2/3);
+            }
+            const fctd = fctk_inf / GAMMA_C; // MPa
+
+            // Bond stress fbd (NBR 6118 Item 9.4.2.4)
+            const eta2 = (bondPos === 'good') ? 1.0 : 0.7;
+            const phiCheck = (currentMode === 'bundle') ? phiEquivalent : phi;
+            const eta3 = (phiCheck <= 32) ? 1.0 : (132 - phiCheck) / 100;
+            const fbd = eta1 * eta2 * eta3 * fctd; // MPa
+
+            // Basic Anchorage Length lb (NBR 6118 Eq. 9.1)
+            // lb = (phi / 4) * (fyd / fbd)
+            const lb = (phiCheck / 4) * (fyd / fbd); // mm
+
+            // Hook factor alpha1 (NBR 6118 Item 9.4.2.5)
+            let alpha1 = 1.0;
+            if (effort === 'tension' && hookType !== 'none') {
+                // alpha1 = 0.7 if cover in plane normal to hook >= 3*phi
+                if (cover >= 3 * phi) {
+                    alpha1 = 0.7;
+                } else {
+                    alpha1 = 1.0;
+                }
+            }
+
+            // Minimum Anchorage Length lb,min (NBR 6118 Item 9.4.2.5)
+            let lbMin = 0;
+            if (effort === 'tension') {
+                lbMin = Math.max(0.3 * lb, 10 * phiCheck, 100); // mm
+            } else {
+                lbMin = Math.max(0.6 * lb, 10 * phiCheck, 100); // mm
+            }
+
+            // Required Anchorage Length lb,nec (NBR 6118 Eq. 9.2)
+            let lbNec = alpha1 * lb * asRatio;
+            if (lbNec < lbMin) {
+                lbNec = lbMin;
+            }
+
+            // Lap Splice Calculation (lot)
+            let lot = 0;
+            let alphaOt = 1.8;
+            if (currentMode === 'splice') {
+                const splicePct = parseInt(document.getElementById('selectSplicePct').value);
+                if (splicePct <= 20) alphaOt = 1.2;
+                else if (splicePct <= 25) alphaOt = 1.4;
+                else if (splicePct <= 33) alphaOt = 1.6;
+                else if (splicePct <= 50) alphaOt = 1.8;
+                else alphaOt = 2.0;
+
+                if (effort === 'tension') {
+                    const lotMin = Math.max(0.3 * alphaOt * lb, 15 * phiCheck, 200); // mm
+                    lot = Math.max(alphaOt * lbNec, lotMin);
+                } else {
+                    const locMin = Math.max(0.6 * lb, 15 * phiCheck, 200); // mm
+                    lot = Math.max(lbNec, locMin);
+                }
+            }
+
+            // End Support Verification
+            let supportWidthAvailable = 0;
+            let reqSupportAnchorage = 0;
+            let extraStirrupsForce = 0;
+            if (currentMode === 'support') {
+                const Vd = parseFloat(document.getElementById('inputVd').value); // kN
+                const bPilar = parseFloat(document.getElementById('inputSupportWidth').value) * 10; // mm
+                supportWidthAvailable = bPilar - cover; // Available length inside column (approx)
+                
+                // Force at end support Rsd = (al / d) * Vd. Simplification al/d = 1.0 -> As,calc = Vd / fyd
+                const AsCalcSupport = (Vd * 1000) / fyd; // mm²
+                // Steel area provided (e.g. 2 bars)
+                const AsEfSupport = (Math.PI * Math.pow(phi, 2) / 4) * 2; // mm²
+                const ratioSupp = Math.min(1.0, AsCalcSupport / AsEfSupport);
+
+                reqSupportAnchorage = alpha1 * lb * ratioSupp;
+                const suppMin = Math.max(8 * phi, 60);
+                if (reqSupportAnchorage < suppMin) reqSupportAnchorage = suppMin;
+
+                if (reqSupportAnchorage > supportWidthAvailable) {
+                    // Requires additional stirrups/dowels (grampos)
+                    extraStirrupsForce = (1 - (supportWidthAvailable / reqSupportAnchorage)) * (Vd);
+                }
+            }
+
+            // Hook Bending Pin Diameter D (NBR 6118 Tabela 9.1 e 9.2)
+            let pinDiameterMultiplier = 5;
+            if (steelType === 'CA25') {
+                pinDiameterMultiplier = (phi < 20) ? 4 : 5;
+            } else if (steelType === 'CA50') {
+                pinDiameterMultiplier = (phi < 20) ? 5 : 8;
+            } else if (steelType === 'CA60') {
+                pinDiameterMultiplier = 6;
+            }
+            const pinDiameter = pinDiameterMultiplier * phi; // mm
+
+            // Update UI Displays
+            document.getElementById('dispFctd').innerText = fctd.toFixed(2) + ' MPa';
+            document.getElementById('dispFyd').innerText = fyd.toFixed(1) + ' MPa';
+            document.getElementById('dispFbd').innerText = fbd.toFixed(2) + ' MPa';
+            document.getElementById('dispPino').innerText = pinDiameter.toFixed(0) + ` mm (${pinDiameterMultiplier}\u03C6)`;
+
+            // KPIs
+            document.getElementById('kpiLb').innerText = (lb / 10).toFixed(1) + ' cm';
+            document.getElementById('kpiLbPhi').innerText = (lb / phiCheck).toFixed(1) + ' \u03C6';
+
+            document.getElementById('kpiLbNec').innerText = (lbNec / 10).toFixed(1) + ' cm';
+            document.getElementById('kpiLbNecPhi').innerText = (lbNec / phiCheck).toFixed(1) + ' \u03C6';
+
+            if (currentMode === 'splice') {
+                document.getElementById('kpiSecondaryTitle').innerText = 'Traspasse (l_ot)';
+                document.getElementById('kpiSecondaryVal').innerText = (lot / 10).toFixed(1) + ' cm';
+                document.getElementById('kpiSecondarySub').innerText = (lot / phiCheck).toFixed(1) + ' \u03C6';
+            } else {
+                document.getElementById('kpiSecondaryTitle').innerText = 'Mínimo (l_b,min)';
+                document.getElementById('kpiSecondaryVal').innerText = (lbMin / 10).toFixed(1) + ' cm';
+                document.getElementById('kpiSecondarySub').innerText = (lbMin / phiCheck).toFixed(1) + ' \u03C6';
+            }
+
+            // Build Engineering Calculation Memory
+            buildCalcMemory({
+                fck, steelType, phi, phiCheck, fyd, fctk_inf, fctd, eta1, eta2, eta3, fbd,
+                lb, alpha1, asRatio, lbMin, lbNec, lot, currentMode, hookType, effort,
+                pinDiameter, pinDiameterMultiplier, supportWidthAvailable, reqSupportAnchorage, extraStirrupsForce
+            });
+
+            // Populate Comparison Table
+            populateComparisonTable(fck, steelType, bondPos, effort, cover, asRatio);
+
+            // Draw Interactive Canvas Scheme
+            drawAnchorageCanvas({
+                phi, phiCheck, lbNec, lb, hookType, effort, pinDiameter, cover,
+                currentMode, lot, reqSupportAnchorage, supportWidthAvailable, extraStirrupsForce
+            });
+        }
+
+        /* Build Detailed Engineering Memory text */
+        function buildCalcMemory(data) {
+            const mem = document.getElementById('calcMemory');
+            
+            let html = `
+                <div class="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded border border-slate-200 dark:border-slate-700 space-y-1">
+                    <div class="font-bold text-sky-600 dark:text-sky-400">1. Resistência à Tração do Concreto (f<sub>ctd</sub>):</div>
+                    <div>f<sub>ctk,inf</sub> = ${data.fck <= 50 ? '0.21 &times; f<sub>ck</sub><sup>2/3</sup>' : '0.27 &times; ln(1 + 0.11 f<sub>ck</sub>) &times; f<sub>ck</sub><sup>2/3</sup>'} = <strong>${data.fctk_inf.toFixed(2)} MPa</strong></div>
+                    <div>f<sub>ctd</sub> = f<sub>ctk,inf</sub> / &gamma;<sub>c</sub> = ${data.fctk_inf.toFixed(2)} / 1.4 = <strong>${data.fctd.toFixed(2)} MPa</strong></div>
+                </div>
+
+                <div class="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded border border-slate-200 dark:border-slate-700 space-y-1">
+                    <div class="font-bold text-sky-600 dark:text-sky-400">2. Tensão Última de Aderência (f<sub>bd</sub>):</div>
+                    <div>f<sub>bd</sub> = &eta;<sub>1</sub> &times; &eta;<sub>2</sub> &times; &eta;<sub>3</sub> &times; f<sub>ctd</sub></div>
+                    <div>f<sub>bd</sub> = ${data.eta1.toFixed(2)} &times; ${data.eta2.toFixed(1)} &times; ${data.eta3.toFixed(2)} &times; ${data.fctd.toFixed(2)} = <strong>${data.fbd.toFixed(2)} MPa</strong></div>
+                </div>
+
+                <div class="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded border border-slate-200 dark:border-slate-700 space-y-1">
+                    <div class="font-bold text-sky-600 dark:text-sky-400">3. Comprimento Básico de Ancoragem (l<sub>b</sub>):</div>
+                    <div>l<sub>b</sub> = (&phi; / 4) &times; (f<sub>yd</sub> / f<sub>bd</sub>)</div>
+                    <div>l<sub>b</sub> = (${data.phiCheck.toFixed(1)} / 4) &times; (${data.fyd.toFixed(1)} / ${data.fbd.toFixed(2)}) = <strong>${(data.lb/10).toFixed(1)} cm</strong> (${(data.lb/data.phiCheck).toFixed(1)} &phi;)</div>
+                </div>
+
+                <div class="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded border border-slate-200 dark:border-slate-700 space-y-1">
+                    <div class="font-bold text-sky-600 dark:text-sky-400">4. Comprimento Necessário de Ancoragem (l<sub>b,nec</sub>):</div>
+                    <div>&alpha;<sub>1</sub> = ${data.alpha1.toFixed(2)} | l<sub>b,min</sub> = ${(data.lbMin/10).toFixed(1)} cm</div>
+                    <div>l<sub>b,nec</sub> = &alpha;<sub>1</sub> &times; l<sub>b</sub> &times; (A<sub>s,calc</sub> / A<sub>s,ef</sub>) = ${data.alpha1.toFixed(2)} &times; ${(data.lb/10).toFixed(1)} &times; ${data.asRatio.toFixed(2)} = <strong>${(data.lbNec/10).toFixed(1)} cm</strong></div>
+                </div>
+            `;
+
+            if (data.currentMode === 'splice') {
+                html += `
+                    <div class="p-2.5 bg-purple-50/50 dark:bg-purple-950/40 rounded border border-purple-200 dark:border-purple-800 space-y-1 text-purple-900 dark:text-purple-200">
+                        <div class="font-bold text-purple-700 dark:text-purple-300">5. Comprimento de Traspasse (l<sub>ot</sub>):</div>
+                        <div>l<sub>ot</sub> = &alpha;<sub>ot</sub> &times; l<sub>b,nec</sub> = ${data.lot ? (data.lot/10).toFixed(1) : 0} cm</div>
+                    </div>
+                `;
+            } else if (data.currentMode === 'support') {
+                const status = data.reqSupportAnchorage <= data.supportWidthAvailable ? 'SUFICIENTE' : 'INSUFICIENTE (Exige Grampos)';
+                html += `
+                    <div class="p-2.5 bg-sky-50/50 dark:bg-sky-950/40 rounded border border-sky-200 dark:border-sky-800 space-y-1 text-sky-900 dark:text-sky-200">
+                        <div class="font-bold text-sky-700 dark:text-sky-300">5. Verificação do Apoio Extremo:</div>
+                        <div>Disponível no Pilar: <strong>${(data.supportWidthAvailable/10).toFixed(1)} cm</strong> | Necessário: <strong>${(data.reqSupportAnchorage/10).toFixed(1)} cm</strong></div>
+                        <div>Condição: <strong class="${data.reqSupportAnchorage <= data.supportWidthAvailable ? 'text-emerald-600' : 'text-amber-600'}">${status}</strong></div>
+                        ${data.extraStirrupsForce > 0 ? `<div>Força nos Grampos Adicionais (F<sub>sd</sub>): <strong>${data.extraStirrupsForce.toFixed(1)} kN</strong></div>` : ''}
+                    </div>
+                `;
+            }
+
+            mem.innerHTML = html;
+        }
+
+        /* Populate comparison table for all rebar diameters */
+        function populateComparisonTable(fck, steelType, bondPos, effort, cover, asRatio) {
+            document.getElementById('tblFck').innerText = fck;
+            document.getElementById('tblSteel').innerText = steelType;
+            const tbody = document.getElementById('tblBody');
+            tbody.innerHTML = '';
+
+            let fyk = (steelType === 'CA60') ? 600 : ((steelType === 'CA25') ? 250 : 500);
+            let eta1 = (steelType === 'CA60') ? 1.4 : ((steelType === 'CA25') ? 1.0 : 2.25);
+            const fyd = fyk / GAMMA_S;
+
+            let fctk_inf = (fck <= 50) ? 0.21 * Math.pow(fck, 2/3) : 0.27 * Math.log(1 + 0.11 * fck) * Math.pow(fck, 2/3);
+            const fctd = fctk_inf / GAMMA_C;
+            const eta2 = (bondPos === 'good') ? 1.0 : 0.7;
+
+            REBAR_DIAMETERS.forEach(phi => {
+                const eta3 = (phi <= 32) ? 1.0 : (132 - phi) / 100;
+                const fbd = eta1 * eta2 * eta3 * fctd;
+                const lb = (phi / 4) * (fyd / fbd);
+
+                const alpha1Hook = (cover >= 3 * phi) ? 0.7 : 1.0;
+
+                const lbMin = (effort === 'tension') ? Math.max(0.3 * lb, 10 * phi, 100) : Math.max(0.6 * lb, 10 * phi, 100);
+
+                const lbNecStraight = Math.max(1.0 * lb * asRatio, lbMin);
+                const lbNecHook = Math.max(alpha1Hook * lb * asRatio, lbMin);
+
+                const lot = Math.max(1.8 * lbNecStraight, 0.3 * 1.8 * lb, 15 * phi, 200);
+
+                let pinMult = (steelType === 'CA25') ? (phi < 20 ? 4 : 5) : ((steelType === 'CA50') ? (phi < 20 ? 5 : 8) : 6);
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-2 font-bold text-sky-600 dark:text-sky-400">&phi; ${phi.toFixed(1)} mm</td>
+                    <td class="p-2">${(lb/10).toFixed(1)} cm</td>
+                    <td class="p-2 font-semibold">${(lbNecStraight/10).toFixed(1)} cm</td>
+                    <td class="p-2 text-emerald-600 dark:text-emerald-400 font-semibold">${(lbNecHook/10).toFixed(1)} cm</td>
+                    <td class="p-2 text-purple-600 dark:text-purple-400">${(lot/10).toFixed(1)} cm</td>
+                    <td class="p-2 text-slate-500">${pinMult * phi} mm (${pinMult}&phi;)</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        /* Interactive Canvas Schematics Renderer */
+        function drawAnchorageCanvas(data) {
+            const canvas = document.getElementById('anchorageCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Handle retina displays
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+            const width = rect.width;
+            const height = rect.height;
+
+            const isDark = document.documentElement.classList.contains('dark');
+
+            // Colors
+            const concreteFill = isDark ? '#1e293b' : '#e2e8f0';
+            const concreteStroke = isDark ? '#334155' : '#94a3b8';
+            const steelColor = '#0284c7'; // Sky 500
+            const steelHookColor = '#10b981'; // Emerald 500
+            const dimensionColor = isDark ? '#cbd5e1' : '#334155';
+            const textColor = isDark ? '#f8fafc' : '#0f172a';
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw Concrete Block background
+            const marginX = 40;
+            const marginY = 40;
+            const blockW = width - 2 * marginX;
+            const blockH = height - 2 * marginY;
+
+            ctx.fillStyle = concreteFill;
+            ctx.strokeStyle = concreteStroke;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(marginX, marginY, blockW, blockH, 12);
+            ctx.fill();
+            ctx.stroke();
+
+            // Concrete Label
+            ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
+            ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.fillText('BLOCO DE CONCRETO', marginX + 15, marginY + 25);
+
+            // Center Y line for rebar
+            const rebarY = marginY + blockH / 2;
+            const startX = marginX + 30;
+
+            // Rebar thickness scaled for visibility
+            const barThick = Math.max(4, Math.min(12, data.phi * 0.4));
+
+            if (data.currentMode === 'splice') {
+                // Draw two overlapping bars
+                const lapLenPx = Math.min(blockW * 0.55, Math.max(100, data.lot * 0.8));
+                
+                // Top Bar
+                ctx.strokeStyle = steelColor;
+                ctx.lineWidth = barThick;
+                ctx.beginPath();
+                ctx.moveTo(startX, rebarY - barThick - 2);
+                ctx.lineTo(startX + lapLenPx + 40, rebarY - barThick - 2);
+                ctx.stroke();
+
+                // Bottom Bar
+                ctx.strokeStyle = '#a855f7'; // Purple
+                ctx.beginPath();
+                ctx.moveTo(startX + 30, rebarY + barThick + 2);
+                ctx.lineTo(startX + lapLenPx + 70, rebarY + barThick + 2);
+                ctx.stroke();
+
+                // Dimension line for lot
+                drawDimensionLine(ctx, startX + 30, startX + lapLenPx + 40, rebarY + 35, `l_ot = ${(data.lot/10).toFixed(1)} cm`, dimensionColor, textColor);
+
+                document.getElementById('statusBox').className = "mt-3 p-3 rounded-lg text-xs flex items-start gap-2.5 bg-purple-50 border border-purple-200 text-purple-900 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-200";
+                document.getElementById('statusText').innerHTML = `<strong>Emenda por Traspasse:</strong> Comprimento de traspassamento calculado em <strong>${(data.lot/10).toFixed(1)} cm</strong> (Fator &alpha;<sub>ot</sub> aplicado).`;
+
+            } else {
+                // Standard Anchorage or Support Mode
+                const anchLenPx = Math.min(blockW * 0.6, Math.max(120, data.lbNec * 0.8));
+                const endX = startX + anchLenPx;
+
+                ctx.strokeStyle = steelColor;
+                ctx.lineWidth = barThick;
+                ctx.beginPath();
+                ctx.moveTo(startX, rebarY);
+
+                if (data.hookType === 'none' || data.effort === 'compression') {
+                    // Straight Anchorage
+                    ctx.lineTo(endX, rebarY);
+                    ctx.stroke();
+
+                    // Dimension line for lb,nec
+                    drawDimensionLine(ctx, startX, endX, rebarY + 35, `l_b,nec = ${(data.lbNec/10).toFixed(1)} cm`, dimensionColor, textColor);
+
+                } else {
+                    // Hooked Anchorage
+                    const hookRadiusPx = Math.max(15, Math.min(35, data.pinDiameter * 0.5));
+                    
+                    ctx.lineTo(endX - hookRadiusPx, rebarY);
+
+                    if (data.hookType === 'type1') {
+                        // 180 degrees semicircular hook
+                        ctx.arc(endX - hookRadiusPx, rebarY - hookRadiusPx, hookRadiusPx, Math.PI / 2, -Math.PI / 2, true);
+                        ctx.lineTo(endX - hookRadiusPx - 30, rebarY - 2 * hookRadiusPx);
+                    } else if (data.hookType === 'type3') {
+                        // 90 degrees right angle hook
+                        ctx.lineTo(endX, rebarY);
+                        ctx.lineTo(endX, rebarY - 45);
+                    } else {
+                        // 45 degrees hook (type 2)
+                        ctx.lineTo(endX, rebarY);
+                        ctx.lineTo(endX + 25, rebarY - 25);
+                    }
+                    ctx.stroke();
+
+                    // Bending Mandrel Circle
+                    ctx.fillStyle = isDark ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.4)';
+                    ctx.strokeStyle = '#f59e0b'; // Amber
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(endX - hookRadiusPx, rebarY - hookRadiusPx, hookRadiusPx - barThick/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Pino Label
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.font = '10px JetBrains Mono, monospace';
+                    ctx.fillText(`D=${data.pinDiameter}mm`, endX - hookRadiusPx - 18, rebarY - hookRadiusPx + 3);
+
+                    // Dimension line
+                    drawDimensionLine(ctx, startX, endX, rebarY + 35, `l_b,nec = ${(data.lbNec/10).toFixed(1)} cm`, dimensionColor, textColor);
+                }
+
+                // Tensile force arrow
+                drawArrow(ctx, startX - 35, rebarY, startX - 5, rebarY, '#ef4444', 3);
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 11px Inter, sans-serif';
+                ctx.fillText(data.effort === 'tension' ? 'Rsd (Tração)' : 'Nsd (Compr.)', startX - 85, rebarY - 8);
+
+                // Update Status Box
+                document.getElementById('statusBox').className = "mt-3 p-3 rounded-lg text-xs flex items-start gap-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300";
+                document.getElementById('statusText').innerHTML = `<strong>Ancoragem Dimensionada:</strong> Comprimento de ancoragem necessário l<sub>b,nec</sub> = <strong>${(data.lbNec/10).toFixed(1)} cm</strong> (${(data.lbNec/data.phiCheck).toFixed(1)} &phi;). NBR 6118 atendida.`;
+            }
+        }
+
+        /* Helper to draw dimension lines with text */
+        function drawDimensionLine(ctx, x1, x2, y, text, lineCol, textCol) {
+            ctx.strokeStyle = lineCol;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            
+            // Extension ticks
+            ctx.moveTo(x1, y - 5); ctx.lineTo(x1, y + 5);
+            ctx.moveTo(x2, y - 5); ctx.lineTo(x2, y + 5);
+
+            // Main horizontal line
+            ctx.moveTo(x1, y); ctx.lineTo(x2, y);
+            ctx.stroke();
+
+            // Text background pill
+            ctx.font = 'bold 11px JetBrains Mono, monospace';
+            const textWidth = ctx.measureText(text).width;
+            const midX = (x1 + x2) / 2;
+
+            ctx.fillStyle = document.documentElement.classList.contains('dark') ? '#0f172a' : '#ffffff';
+            ctx.fillRect(midX - textWidth/2 - 4, y - 8, textWidth + 8, 16);
+
+            // Text
+            ctx.fillStyle = textCol;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, midX, y);
+            ctx.textAlign = 'start'; // reset
+        }
+
+        /* Helper to draw directional arrow */
+        function drawArrow(ctx, fromX, fromY, toX, toY, color, width) {
+            const headlen = 8;
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.fill();
+        }
+
+        /* Initial Setup on Page Load */
+        window.onload = function() {
+            calculateAll();
+            
+            // Handle window resize for dynamic canvas redrawing
+            window.addEventListener('resize', () => {
+                calculateAll();
+            });
+        };
+    </script>
+</body>
+</html>
